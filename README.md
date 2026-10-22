@@ -43,3 +43,11 @@ uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
 ```
 
 Then open http://127.0.0.1:5000.
+
+## Training
+
+Train the model and save it, with its encoder, in `src/web_service/local_objects/`:
+
+```bash
+uv run python -m src.modelling.main data/abalone.csv
+```
