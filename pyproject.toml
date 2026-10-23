@@ -11,7 +11,7 @@ authors = [
 description = "X-HEC MLOps Project on Abalone age prediction model"
 requires-python = ">=3.11,<3.12"
 dependencies = [
-  "fastapi",
+  "fastapi>=0.139,<0.151",
   "uvicorn",
   "pydantic",
   "pandas",
