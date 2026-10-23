@@ -51,3 +51,33 @@ Train the model and save it, with its encoder, in `src/web_service/local_objects
 ```bash
 uv run python -m src.modelling.main data/abalone.csv
 ```
+
+## Orchestration with Prefect
+
+The training pipeline is a Prefect flow (`src/modelling/main.py`), and each step is a Prefect task.
+
+1. Start the Prefect server (UI available at http://127.0.0.1:4200):
+
+```bash
+uv run prefect server start
+```
+
+2. In another terminal, point the client to this server:
+
+```bash
+uv run prefect config set PREFECT_API_URL=http://127.0.0.1:4200/api
+```
+
+3. Run the training flow once:
+
+```bash
+uv run python -m src.modelling.main data/abalone.csv
+```
+
+4. Serve the deployment that retrains the model every Monday at midnight:
+
+```bash
+uv run python -m src.modelling.deployment
+```
+
+The flow runs and the deployment can then be followed in the Prefect UI.
