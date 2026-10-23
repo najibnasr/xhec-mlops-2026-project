@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 
+from prefect import flow
 from sklearn.model_selection import train_test_split
 
 from src.modelling.predicting import evaluate_model
@@ -11,7 +12,8 @@ from src.modelling.utils import pickle_object
 LOCAL_OBJECTS_DIR = Path("src/web_service/local_objects")
 
 
-def main(trainset_path: Path) -> None:
+@flow(name="train-model", log_prints=True)
+def train_model_flow(trainset_path: Path) -> None:
     """Train a model on the data at the given path and save the model and encoder as pickles."""
     df = load_data(trainset_path)
     train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -32,4 +34,4 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a model using the data at the given path.")
     parser.add_argument("trainset_path", type=Path, help="Path to the training set")
     args = parser.parse_args()
-    main(args.trainset_path)
+    train_model_flow(args.trainset_path)
