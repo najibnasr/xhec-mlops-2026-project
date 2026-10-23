@@ -6,9 +6,20 @@ Predict the age of abalone (number of rings) from physical measurements, with an
 
 - Najib Nasr ([@najibnasr](https://github.com/najibnasr))
 
+## Project structure
+
+```
+├── notebooks/              # EDA and first modelling pass (tracked with MLflow)
+├── src/
+│   ├── modelling/          # Training pipeline (Prefect flow and tasks)
+│   └── web_service/        # FastAPI app, Pydantic models, saved model and encoder
+├── bin/run_services.sh     # Starts the Prefect server and the API (used in Docker)
+└── Dockerfile.app
+```
+
 ## Setup
 
-Requirements: Python 3.11 and [uv](https://docs.astral.sh/uv/).
+Requirements: Python 3.11, [uv](https://docs.astral.sh/uv/) and Docker.
 
 ```bash
 uv sync
@@ -30,8 +41,6 @@ The `data/` folder is git-ignored.
 
 The `notebooks` folder contains the exploratory analysis (`eda.ipynb`) and a first modelling pass (`modelling.ipynb`), with experiments tracked in MLflow.
 
-To run them:
-
 ```bash
 uv run --with jupyter jupyter lab
 ```
@@ -46,7 +55,7 @@ Then open http://127.0.0.1:5000.
 
 ## Training
 
-Train the model and save it, with its encoder, in `src/web_service/local_objects/`:
+The model is a linear regression on the physical measurements, with `Sex` one-hot encoded. The training script saves the model and its encoder in `src/web_service/local_objects/`:
 
 ```bash
 uv run python -m src.modelling.main data/abalone.csv
@@ -81,3 +90,50 @@ uv run python -m src.modelling.deployment
 ```
 
 The flow runs and the deployment can then be followed in the Prefect UI.
+
+## Prediction API
+
+The API is built with FastAPI and validates the inputs with Pydantic.
+
+### Run it with Docker
+
+```bash
+docker build -t abalone-api -f Dockerfile.app .
+docker run -p 0.0.0.0:8000:8001 -p 0.0.0.0:4200:4201 abalone-api
+```
+
+- API documentation: http://localhost:8000/docs
+- Prefect UI: http://localhost:4200
+
+### Run it locally (without Docker)
+
+```bash
+uv run uvicorn src.web_service.main:app --port 8001
+```
+
+The documentation is then available at http://127.0.0.1:8001/docs.
+
+### Example request
+
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sex": "M",
+    "length": 0.455,
+    "diameter": 0.365,
+    "height": 0.095,
+    "whole_weight": 0.514,
+    "shucked_weight": 0.2245,
+    "viscera_weight": 0.101,
+    "shell_weight": 0.15
+  }'
+```
+
+Response:
+
+```json
+{"rings": 9.22, "age": 10.72}
+```
+
+`sex` must be `M`, `F` or `I` (infant), and every measurement must be positive. Otherwise the API returns a 422 error.
