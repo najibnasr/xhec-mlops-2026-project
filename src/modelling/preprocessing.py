@@ -1,18 +1,21 @@
 from pathlib import Path
 
 import pandas as pd
+from prefect import task
 from sklearn.preprocessing import OneHotEncoder
 
 CATEGORICAL_COLUMNS = ["Sex"]
 TARGET_COLUMN = "Rings"
 
 
+@task
 def load_data(path: Path) -> pd.DataFrame:
     """Read the abalone dataset and drop the rows with an impossible height of 0."""
     df = pd.read_csv(path)
     return df[df["Height"] > 0]
 
 
+@task
 def fit_encoder(df: pd.DataFrame) -> OneHotEncoder:
     """Fit a one-hot encoder on the categorical columns."""
     encoder = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
@@ -20,6 +23,7 @@ def fit_encoder(df: pd.DataFrame) -> OneHotEncoder:
     return encoder
 
 
+@task
 def encode_features(df: pd.DataFrame, encoder: OneHotEncoder) -> pd.DataFrame:
     """Replace the categorical columns by their one-hot encoding."""
     encoded = pd.DataFrame(
